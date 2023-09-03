@@ -9,7 +9,7 @@ class SplashScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSplashScreen(
-      animationDuration: const Duration(seconds: 3),
+      animationDuration: const Duration(seconds: 1),
       curve: Curves.linear,
       centered: true,
       splashTransition: SplashTransition.fadeTransition,
@@ -18,8 +18,8 @@ class SplashScreen extends StatelessWidget {
         child: Text(
           "Weather App",
           textAlign: TextAlign.center,
-          style: GoogleFonts.aBeeZee(
-            fontSize: 100,
+          style: GoogleFonts.orbitron(
+            fontSize: 80,
             fontWeight: FontWeight.bold,
           ),
         ),
