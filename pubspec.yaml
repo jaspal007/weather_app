@@ -40,6 +40,8 @@ dependencies:
   weather: ^3.1.1
   flutter_svg: ^2.0.7
   flare_flutter: ^3.0.2
+  flutter_hooks: ^0.20.1
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -65,9 +67,20 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - lib/assets/clear_day.svg
+    - lib/assets/clear_night.svg
+    - lib/assets/cloud.svg
     - lib/assets/foggy.svg
-    - lib/assets/foggy.png
-    - lib/assets/animate.svg
+    - lib/assets/mist.svg
+    - lib/assets/partly_cloudy_day.svg
+    - lib/assets/partly_cloudy_night.svg
+    - lib/assets/rainy.svg
+    - lib/assets/shower_rain.svg
+    - lib/assets/snow.svg
+    - lib/assets/thunderstorm.svg
+    - lib/assets/satellite.svg
+
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

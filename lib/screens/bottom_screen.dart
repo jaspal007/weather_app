@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class MyBottomSheet extends StatefulWidget {
   const MyBottomSheet({super.key});
@@ -8,8 +12,31 @@ class MyBottomSheet extends StatefulWidget {
 }
 
 class _MyBottomSheetState extends State<MyBottomSheet> {
+  Stream stream = const Stream.empty();
+
   TextEditingController cityController = TextEditingController();
   bool isNull = true;
+
+  Future<void> cityResponse() async {
+    var url = Uri.parse(
+        "https://api.mapbox.com/search/searchbox/v1/suggest?q=${cityController.text}&language=en&session_token=0e511749-3c49-4e71-88a5-f818dc80d812&access_token=pk.eyJ1IjoibTFja2V5MDA3IiwiYSI6ImNsbTRvNWpsajBqMGEzZnFvb3E2cnYyNDYifQ.eS9ZbgMGRbFTh2lJK_LXIQ");
+    http.Response response = await http.get(url);
+    try {
+      if (response.statusCode == 200) {
+        setState(() {
+          String data = response.body;
+          stream = jsonDecode(data)["suggestions"];
+          // for (var item in stream)
+          //   print("${item["name"]} + ${item["place_formatted"]}");
+        });
+      } else {
+        print("failed");
+      }
+    } on HttpException catch (error) {
+      print(error.message);
+    }
+    return;
+  }
 
   @override
   void initState() {
@@ -20,6 +47,7 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
           isNull = true;
         } else {
           isNull = false;
+          cityResponse();
         }
       });
     });
@@ -53,7 +81,6 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                     decoration: InputDecoration(
                       prefixIcon: const Icon(
                         Icons.search,
-                        color: Colors.white,
                       ),
                       suffixIcon: (isNull)
                           ? null
@@ -66,26 +93,20 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                               },
                               icon: const Icon(
                                 Icons.clear,
-                                color: Colors.white,
                               ),
                             ),
                       border: OutlineInputBorder(
                         borderSide: const BorderSide(
-                          color: Colors.white,
                           width: 5,
                         ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(
-                          color: Colors.white,
-                        ),
+                        borderSide: const BorderSide(),
                         borderRadius: BorderRadius.circular(50),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(
-                          color: Colors.white,
-                        ),
+                        borderSide: const BorderSide(),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
@@ -95,22 +116,33 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                   ),
                   SizedBox(
                     height: height * 0.7 - keyboard,
-                    child: ListView.builder(
-                      itemBuilder: (context, index) {
-                        return Column(
-                          children: [
-                            ListTile(
-                              title: Text("hello $index"),
-                            ),
-                            const Divider(
-                              indent: 50,
-                              thickness: 2,
-                              endIndent: 50,
-                            )
-                          ],
+                    child: StreamBuilder(
+                      stream: stream,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator.adaptive();
+                        }
+                        if (snapshot.hasData) {
+                          var documents = snapshot.data!.docs;
+                          return ListView.builder(
+                            itemCount: documents.length,
+                            itemBuilder: (context, index) {
+                              ListTile(
+                                title: Text(
+                                  "${documents[index]["name"]}",
+                                ),
+                                subtitle: Text(
+                                  "${documents[index]["place_formatted"]}",
+                                ),
+                              );
+                            },
+                          );
+                        }
+                        return const Text(
+                          "Type something to search",
                         );
                       },
-                      itemCount: 50,
                     ),
                   ),
                 ],
@@ -133,7 +165,6 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                     decoration: InputDecoration(
                       prefixIcon: const Icon(
                         Icons.search,
-                        color: Colors.white,
                       ),
                       suffixIcon: (isNull)
                           ? null
@@ -146,26 +177,20 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                               },
                               icon: const Icon(
                                 Icons.clear,
-                                color: Colors.white,
                               ),
                             ),
                       border: OutlineInputBorder(
                         borderSide: const BorderSide(
-                          color: Colors.white,
                           width: 5,
                         ),
                         borderRadius: BorderRadius.circular(50),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(
-                          color: Colors.white,
-                        ),
+                        borderSide: const BorderSide(),
                         borderRadius: BorderRadius.circular(50),
                       ),
                       focusedBorder: OutlineInputBorder(
-                        borderSide: const BorderSide(
-                          color: Colors.white,
-                        ),
+                        borderSide: const BorderSide(),
                         borderRadius: BorderRadius.circular(20),
                       ),
                     ),
@@ -175,22 +200,37 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                   ),
                   SizedBox(
                     height: height * 0.7 - keyboard,
-                    child: ListView.builder(
-                      itemBuilder: (context, index) {
-                        return Column(
-                          children: [
-                            ListTile(
-                              title: Text("hello $index"),
+                    child: StreamBuilder(
+                      stream: stream,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const CircularProgressIndicator.adaptive();
+                        }
+                        if (snapshot.hasData) {
+                          var documents = snapshot.data!.docs;
+                          return Expanded(
+                            child: ListView.builder(
+                              itemCount: documents.length,
+                              itemBuilder: (context, index) {
+                                ListTile(
+                                  title: Text(
+                                    "${documents[index]["name"]}",
+                                  ),
+                                  subtitle: Text(
+                                    "${documents[index]["place_formatted"]}",
+                                  ),
+                                );
+                              },
                             ),
-                            const Divider(
-                              indent: 50,
-                              thickness: 2,
-                              endIndent: 50,
-                            )
-                          ],
+                          );
+                        }
+                        return const Expanded(
+                          child: Text(
+                            "Type something to search",
+                          ),
                         );
                       },
-                      itemCount: 50,
                     ),
                   ),
                 ],

@@ -15,6 +15,7 @@ class WeatherInfo {
   DateTime sunset;
   double windSpeed;
   double windDirection;
+  String weatherIcon;
   WeatherInfo({
     required this.dateTime,
     this.temperature = double.infinity,
@@ -22,6 +23,7 @@ class WeatherInfo {
     this.tempMax = double.infinity,
     this.tempFeels = double.infinity,
     this.weather = "---",
+    this.weatherIcon = "---",
     this.place = "---",
     this.humidity = double.infinity,
     this.latitude = double.infinity,

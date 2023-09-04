@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:weather/weather.dart';
@@ -13,22 +16,48 @@ class MyHome extends StatefulWidget {
 }
 
 class _MyHomeState extends State<MyHome> {
+  bool isLoading = false;
   String temperature = "--";
+  String tempMin = "--";
+  String tempMax = "--";
+  String icon = weatherSVG["000"]!;
   WeatherInfo info = WeatherInfo(
     dateTime: DateTime.now(),
     sunrise: DateTime.now(),
     sunset: DateTime.now(),
   );
   Future<void> callWeather() async {
-    Weather weatherInfo =
-        await weatherFactory.currentWeatherByCityName("Indore");
-    print(weatherInfo);
     setState(() {
-      info.dateTime = weatherInfo.date!;
-      info.temperature = weatherInfo.temperature!.celsius!;
-      info.weather = weatherInfo.weatherDescription!;
-      info.place = "${weatherInfo.areaName!}, ${weatherInfo.country!}";
+      isLoading = true;
     });
+    try {
+      Weather weatherInfo =
+          await weatherFactory.currentWeatherByCityName("Seattle");
+      print(weatherInfo);
+      setState(() {
+        info.dateTime = weatherInfo.date!;
+        info.temperature = weatherInfo.temperature!.celsius!;
+        info.weather = weatherInfo.weatherDescription!;
+        info.place = "${weatherInfo.areaName!}, ${weatherInfo.country!}";
+        info.weatherIcon = weatherInfo.weatherIcon!;
+        info.tempMin = weatherInfo.tempMin!.celsius!;
+        info.tempMax = weatherInfo.tempMax!.celsius!;
+        temperature = info.temperature.round().toString();
+        icon = weatherSVG[info.weatherIcon]!;
+        isLoading = false;
+      });
+      print("weather icon: ${info.weatherIcon}");
+    } on OpenWeatherAPIException catch (error) {
+      // print((error.toString()));
+      SnackBar snackBar = SnackBar(content: Text(error.toString()));
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    callWeather();
   }
 
   @override
@@ -110,14 +139,11 @@ class _MyHomeState extends State<MyHome> {
                           textAlign: TextAlign.center,
                           info.place,
                         ),
-                        SizedBox(
-                          height: height * 0.05,
+                        Container(
+                          // color: Colors.red,
+                          height: height * 0.06,
                           width: double.infinity,
-                          child: SvgPicture.asset(
-                            "lib/assets/foggy.svg",
-                            fit: BoxFit.contain,
-                            color: Colors.white,
-                          ),
+                          child: SvgPicture.asset(icon),
                         ),
                         const Padding(
                           padding: EdgeInsets.all(5),
@@ -128,14 +154,7 @@ class _MyHomeState extends State<MyHome> {
                           style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                         TextButton(
-                          onPressed: () {
-                            callWeather().whenComplete(() {
-                              setState(() {
-                                temperature =
-                                    info.temperature.round().toString();
-                              });
-                            });
-                          },
+                          onPressed: () {},
                           child: const Text(
                             "Get Weather",
                             style: TextStyle(
