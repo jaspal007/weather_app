@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:weather_app/resources/global_variable.dart';
 
 class MyBottomSheet extends StatefulWidget {
   const MyBottomSheet({super.key});
@@ -12,10 +13,35 @@ class MyBottomSheet extends StatefulWidget {
 }
 
 class _MyBottomSheetState extends State<MyBottomSheet> {
-  Stream stream = const Stream.empty();
+  List<dynamic> stream = [];
 
   TextEditingController cityController = TextEditingController();
   bool isNull = true;
+
+  Future<void> geoCode(
+      String cityName, String stateCode, String countryCode) async {
+    var url = Uri.parse(
+        "http://api.openweathermap.org/geo/1.0/direct?q=$cityName,$stateCode,$countryCode&appid=$apiKey");
+    http.Response response = await http.get(url);
+    try {
+      if (response.statusCode == 200) {
+        setState(() {
+          String data = response.body;
+          List geoCode = jsonDecode(data);
+          if (geoCode.isNotEmpty) {
+            longitude.value = geoCode[0]["lon"];
+            latitude.value = geoCode[0]["lat"];
+          } else {
+            throw Exception("Place not found");
+          }
+        });
+      } else {
+        print("failed");
+      }
+    } catch (error) {
+      print(error);
+    }
+  }
 
   Future<void> cityResponse() async {
     var url = Uri.parse(
@@ -25,7 +51,8 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
       if (response.statusCode == 200) {
         setState(() {
           String data = response.body;
-          stream = jsonDecode(data)["suggestions"];
+          final cities = jsonDecode(data)["suggestions"];
+          stream = cities;
           // for (var item in stream)
           //   print("${item["name"]} + ${item["place_formatted"]}");
         });
@@ -89,6 +116,7 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                                 setState(() {
                                   cityController.clear();
                                   isNull = true;
+                                  stream.clear();
                                 });
                               },
                               icon: const Icon(
@@ -115,35 +143,58 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                     padding: EdgeInsets.symmetric(vertical: 10),
                   ),
                   SizedBox(
-                    height: height * 0.7 - keyboard,
-                    child: StreamBuilder(
-                      stream: stream,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator.adaptive();
-                        }
-                        if (snapshot.hasData) {
-                          var documents = snapshot.data!.docs;
-                          return ListView.builder(
-                            itemCount: documents.length,
+                    // color: Colors.rd,
+                    height: (height * 0.7) - keyboard,
+                    child: (stream.isEmpty)
+                        ? const Center(
+                            child: Text("Type to suggest"),
+                          )
+                        : ListView.builder(
+                            itemCount: stream.length,
                             itemBuilder: (context, index) {
-                              ListTile(
+                              return ListTile(
+                                onTap: () {
+                                  print("tapped");
+                                  try {
+                                    final data = stream[index]["context"];
+                                    if (data["country"]["country_code"]
+                                            .toString()
+                                            .isNotEmpty &&
+                                        data["region"]["region_code"]
+                                            .toString()
+                                            .isNotEmpty) {
+                                      geoCode(
+                                        stream[index]["name"],
+                                        data["region"]["region_code"],
+                                        data["country"]["country_code"],
+                                      ).whenComplete(
+                                          () => Navigator.pop(context));
+                                    }
+                                  } catch (error) {
+                                    showAdaptiveDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          AlertDialog.adaptive(
+                                        content: Text(error.toString()),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: const Text("OK")),
+                                        ],
+                                      ),
+                                    );
+                                  }
+                                },
                                 title: Text(
-                                  "${documents[index]["name"]}",
+                                  "${stream[index]["name"]}",
                                 ),
                                 subtitle: Text(
-                                  "${documents[index]["place_formatted"]}",
+                                  "${stream[index]["place_formatted"]}",
                                 ),
                               );
                             },
-                          );
-                        }
-                        return const Text(
-                          "Type something to search",
-                        );
-                      },
-                    ),
+                          ),
                   ),
                 ],
               ),
@@ -200,38 +251,28 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                   ),
                   SizedBox(
                     height: height * 0.7 - keyboard,
-                    child: StreamBuilder(
-                      stream: stream,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const CircularProgressIndicator.adaptive();
-                        }
-                        if (snapshot.hasData) {
-                          var documents = snapshot.data!.docs;
-                          return Expanded(
-                            child: ListView.builder(
-                              itemCount: documents.length,
-                              itemBuilder: (context, index) {
-                                ListTile(
-                                  title: Text(
-                                    "${documents[index]["name"]}",
-                                  ),
-                                  subtitle: Text(
-                                    "${documents[index]["place_formatted"]}",
-                                  ),
-                                );
-                              },
-                            ),
-                          );
-                        }
-                        return const Expanded(
-                          child: Text(
-                            "Type something to search",
+                    child: (stream.isEmpty)
+                        ? const Center(
+                            child: Text("Type to suggest"),
+                          )
+                        : ListView.builder(
+                            itemCount: stream.length,
+                            itemBuilder: (context, index) {
+                              return ListTile(
+                                onTap: () {
+                                  print("tapped");
+                                  cityName.value = stream[index]["name"];
+                                  Navigator.pop(context);
+                                },
+                                title: Text(
+                                  "${stream[index]["name"]}",
+                                ),
+                                subtitle: Text(
+                                  "${stream[index]["place_formatted"]}",
+                                ),
+                              );
+                            },
                           ),
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),

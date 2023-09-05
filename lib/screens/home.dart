@@ -1,6 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:weather/weather.dart';
@@ -31,8 +28,9 @@ class _MyHomeState extends State<MyHome> {
       isLoading = true;
     });
     try {
-      Weather weatherInfo =
-          await weatherFactory.currentWeatherByCityName("Seattle");
+      Weather weatherInfo = await weatherFactory.currentWeatherByLocation(
+          latitude.value, longitude.value);
+      //await weatherFactory.currentWeatherByCityName(cityName.value);
       print(weatherInfo);
       setState(() {
         info.dateTime = weatherInfo.date!;
@@ -48,8 +46,8 @@ class _MyHomeState extends State<MyHome> {
       });
       print("weather icon: ${info.weatherIcon}");
     } on OpenWeatherAPIException catch (error) {
-      // print((error.toString()));
-      SnackBar snackBar = SnackBar(content: Text(error.toString()));
+      print(error.runtimeType);
+      SnackBar snackBar = SnackBar(content: Text("data"));
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
   }
@@ -58,6 +56,14 @@ class _MyHomeState extends State<MyHome> {
   void initState() {
     super.initState();
     callWeather();
+    latitude.addListener(() {
+      callWeather();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 
   @override
@@ -152,15 +158,6 @@ class _MyHomeState extends State<MyHome> {
                           info.weather,
                           textAlign: TextAlign.center,
                           style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        TextButton(
-                          onPressed: () {},
-                          child: const Text(
-                            "Get Weather",
-                            style: TextStyle(
-                              color: Colors.white,
-                            ),
-                          ),
                         ),
                       ],
                     ),
@@ -258,19 +255,19 @@ class _MyHomeState extends State<MyHome> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const Center(
+                          Center(
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  "71",
-                                  style: TextStyle(
+                                  temperature,
+                                  style: const TextStyle(
                                     fontSize: 100,
                                     // backgroundColor: Colors.green,
                                   ),
                                 ),
-                                Column(
+                                const Column(
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     Padding(
@@ -284,18 +281,22 @@ class _MyHomeState extends State<MyHome> {
                                       ),
                                     ),
                                   ],
-                                )
+                                ),
                               ],
                             ),
                           ),
                           const Padding(
                             padding: EdgeInsets.all(20),
                           ),
+                          Text(
+                            textAlign: TextAlign.center,
+                            info.place,
+                          ),
                           SizedBox(
                             height: height * 0.3,
                             width: double.infinity,
                             child: SvgPicture.asset(
-                              "lib/assets/foggy.svg",
+                              icon,
                               fit: BoxFit.contain,
                               color: Colors.white,
                             ),
@@ -303,10 +304,10 @@ class _MyHomeState extends State<MyHome> {
                           const Padding(
                             padding: EdgeInsets.all(10),
                           ),
-                          const Text(
-                            "Foggy",
+                          Text(
+                            info.weather,
                             textAlign: TextAlign.center,
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                            style: const TextStyle(fontWeight: FontWeight.bold),
                           )
                         ],
                       ),

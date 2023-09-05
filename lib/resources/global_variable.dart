@@ -1,7 +1,21 @@
+import 'package:flutter/material.dart';
 import 'package:weather/weather.dart';
+import 'package:weather_app/resources/weather.dart';
+
+String apiKey = "85a179f45f67aedc589a5d756daf7d92";
 
 WeatherFactory weatherFactory =
     WeatherFactory("22f1e332aeeabd1c9c2a9e015b83bc61");
+
+ValueNotifier<WeatherInfo> cityData = ValueNotifier(WeatherInfo(
+  dateTime: DateTime.now(),
+  sunrise: DateTime.now(),
+  sunset: DateTime.now(),
+));
+
+ValueNotifier<String> cityName = ValueNotifier("Indore");
+ValueNotifier<double> longitude = ValueNotifier(75.8682);
+ValueNotifier<double> latitude = ValueNotifier(22.720362);
 
 final weatherSVG = <String, String>{
   "000": "lib/assets/satellite.svg",
