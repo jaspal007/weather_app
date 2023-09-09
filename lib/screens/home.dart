@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:location/location.dart';
 import 'package:weather/weather.dart';
 import 'package:weather_app/resources/global_variable.dart';
 import 'package:weather_app/resources/weather.dart';
 import 'package:weather_app/screens/bottom_screen.dart';
+import 'package:weather_app/widgets/card.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
@@ -13,7 +15,9 @@ class MyHome extends StatefulWidget {
 }
 
 class _MyHomeState extends State<MyHome> {
-  bool isLoading = false;
+  Location location = Location();
+  late LocationData _locationData;
+
   String temperature = "--";
   String tempMin = "--";
   String tempMax = "--";
@@ -23,10 +27,42 @@ class _MyHomeState extends State<MyHome> {
     sunrise: DateTime.now(),
     sunset: DateTime.now(),
   );
+
+  Future<void> locationService() async {
+    bool _serviceGranted;
+    PermissionStatus _permissionStatus;
+    _serviceGranted = await location.serviceEnabled();
+    if (!_serviceGranted) {
+      _serviceGranted = await location.requestService();
+      if (!_serviceGranted) {
+        print("service is not granted");
+      }
+    }
+    _permissionStatus = await location.hasPermission();
+    if (_permissionStatus == PermissionStatus.denied) {
+      _permissionStatus = await location.requestPermission();
+      if (_permissionStatus == PermissionStatus.denied) {
+        print("permission is not granted");
+      }
+      print("permission granted");
+    }
+    getLocation();
+  }
+
+  Future<void> getLocation() async {
+    try {
+      _locationData = await location.getLocation();
+      setState(() {
+        longitude.value = _locationData.longitude!;
+        latitude.value = _locationData.latitude!;
+      });
+    } on Exception catch (error) {
+      print(error.toString());
+    }
+    callWeather();
+  }
+
   Future<void> callWeather() async {
-    setState(() {
-      isLoading = true;
-    });
     try {
       Weather weatherInfo = await weatherFactory.currentWeatherByLocation(
           latitude.value, longitude.value);
@@ -42,12 +78,11 @@ class _MyHomeState extends State<MyHome> {
         info.tempMax = weatherInfo.tempMax!.celsius!;
         temperature = info.temperature.round().toString();
         icon = weatherSVG[info.weatherIcon]!;
-        isLoading = false;
       });
       print("weather icon: ${info.weatherIcon}");
     } on OpenWeatherAPIException catch (error) {
       print(error.runtimeType);
-      SnackBar snackBar = SnackBar(content: Text("data"));
+      SnackBar snackBar = const SnackBar(content: Text("data"));
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
   }
@@ -55,7 +90,8 @@ class _MyHomeState extends State<MyHome> {
   @override
   void initState() {
     super.initState();
-    callWeather();
+    locationService();
+    // callWeather();
     latitude.addListener(() {
       callWeather();
     });
@@ -84,11 +120,6 @@ class _MyHomeState extends State<MyHome> {
     print("width: ${MediaQuery.of(context).size.width}"); //393
 
     return Scaffold(
-      // appBar: AppBar(
-      //   backgroundColor: Colors.transparent,
-      //   elevation: 0,
-      //   title: const Text("Current location"),
-      // ),
       drawer: Drawer(
         width:
             (orientation == Orientation.portrait) ? width * 0.6 : width * 0.4,
@@ -99,151 +130,203 @@ class _MyHomeState extends State<MyHome> {
         left: false,
         right: false,
         child: (orientation == Orientation.portrait)
-            ? Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Container(
-                    color: Colors.blue,
-                    height: height * 0.35,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Center(
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                temperature,
-                                style: const TextStyle(
-                                  fontSize: 80,
-                                  // backgroundColor: Colors.green,
-                                ),
-                              ),
-                              const Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: EdgeInsets.only(top: 15),
-                                  ),
-                                  Text(
-                                    "℃",
-                                    style: TextStyle(
-                                      fontSize: 30,
-                                      // backgroundColor: Colors.yellow,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            ],
-                          ),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.all(10),
-                        ),
-                        Text(
-                          textAlign: TextAlign.center,
-                          info.place,
-                        ),
-                        Container(
-                          // color: Colors.red,
-                          height: height * 0.06,
-                          width: double.infinity,
-                          child: SvgPicture.asset(icon),
-                        ),
-                        const Padding(
-                          padding: EdgeInsets.all(5),
-                        ),
-                        Text(
-                          info.weather,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+            ? AnimatedContainer(
+                duration: const Duration(seconds: 3),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.purple.shade900,
+                      Colors.purple.shade700,
+                      Colors.purple.shade600,
+                      Colors.purple.shade500,
+                      Colors.purple.shade300,
+                      Colors.purple.shade200,
+                    ],
                   ),
-                  Container(
-                    color: Colors.teal,
-                    height: height * 0.65,
-                    padding: const EdgeInsets.symmetric(horizontal: 5),
-                    child: SingleChildScrollView(
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(seconds: 5),
+                      // decoration: BoxDecoration(),
+                      // color: Colors.grey,
+                      height: height * 0.4,
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
+                          Center(
                             child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Card(
-                                  child: SizedBox(
-                                    height: 100,
-                                    width: width / 2,
-                                    child: const Center(child: Text("card1")),
+                                Text(
+                                  temperature,
+                                  style: TextStyle(
+                                    fontSize: height * 0.1,
+                                    // backgroundColor: Colors.green,
                                   ),
                                 ),
-                                Card(
-                                  child: SizedBox(
-                                    height: 100,
-                                    width: width / 2,
-                                    child: const Center(child: Text("card2")),
-                                  ),
-                                ),
+                                Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 15),
+                                    ),
+                                    Text(
+                                      "℃",
+                                      style: TextStyle(
+                                        fontSize: height * 0.05,
+                                        // backgroundColor: Colors.yellow,
+                                      ),
+                                    ),
+                                  ],
+                                )
                               ],
                             ),
                           ),
-                          const Card(
-                            child: SizedBox(
-                              height: 400,
-                              width: double.infinity,
-                              child: Center(child: Text("card4")),
+                          Padding(
+                            padding: EdgeInsets.all(height * 0.35 * 0.05),
+                          ),
+                          Text(
+                            textAlign: TextAlign.center,
+                            info.place.toUpperCase(),
+                            style: TextStyle(fontSize: height * 0.03),
+                          ),
+                          SizedBox(
+                            // color: Colors.red,
+                            height: height * 0.1,
+                            width: double.infinity,
+                            child: SvgPicture.asset(
+                              icon,
                             ),
                           ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                Card(
-                                  child: SizedBox(
-                                    height: 100,
-                                    width: width / 2,
-                                    child: const Center(child: Text("card5")),
-                                  ),
-                                ),
-                                Card(
-                                  child: SizedBox(
-                                    height: 100,
-                                    width: width / 2,
-                                    child: const Center(child: Text("card6")),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          const Padding(
+                            padding: EdgeInsets.all(5),
                           ),
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: [
-                                Card(
-                                  child: SizedBox(
-                                    height: 100,
-                                    width: width / 2,
-                                    child: const Center(child: Text("card3")),
-                                  ),
-                                ),
-                                Card(
-                                  child: SizedBox(
-                                    height: 100,
-                                    width: width / 2,
-                                    child: const Center(child: Text("card7")),
-                                  ),
-                                ),
-                              ],
-                            ),
+                          Text(
+                            info.weather.toUpperCase(),
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: height * 0.35 * 0.06),
+                          ),
+                          TextButton(
+                            onPressed: (){
+                              print("tapped");
+                              locationService();
+                            },
+                            child: const Text("Get current weather"),
                           ),
                         ],
                       ),
                     ),
-                  )
-                ],
+                    Container(
+                      // color: Colors.teal,
+                      height: height * 0.6,
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  MyCard(
+                                    width: width / 2,
+                                    height: 100,
+                                    radius: 20,
+                                    widget: const Center(
+                                      child: Text(
+                                        "card1",
+                                      ),
+                                    ),
+                                  ),
+                                  MyCard(
+                                    width: width / 2,
+                                    height: 100,
+                                    radius: 20,
+                                    widget: const Center(
+                                      child: Text(
+                                        "card2",
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            MyCard(
+                              width: width,
+                              height: 400,
+                              radius: 20,
+                              widget: const Center(
+                                child: Text(
+                                  "card4",
+                                ),
+                              ),
+                            ),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  MyCard(
+                                    width: width / 2,
+                                    height: 100,
+                                    radius: 20,
+                                    widget: const Center(
+                                      child: Text(
+                                        "card5",
+                                      ),
+                                    ),
+                                  ),
+                                  MyCard(
+                                    width: width / 2,
+                                    height: 100,
+                                    radius: 20,
+                                    widget: const Center(
+                                      child: Text(
+                                        "card6",
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: [
+                                  MyCard(
+                                    width: width / 2,
+                                    height: 100,
+                                    radius: 20,
+                                    widget: const Center(
+                                      child: Text(
+                                        "card3",
+                                      ),
+                                    ),
+                                  ),
+                                  MyCard(
+                                    width: width / 2,
+                                    height: 100,
+                                    radius: 20,
+                                    widget: const Center(
+                                      child: Text(
+                                        "card7",
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               )
             : SizedBox(
                 child: Row(

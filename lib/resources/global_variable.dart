@@ -7,15 +7,16 @@ String apiKey = "85a179f45f67aedc589a5d756daf7d92";
 WeatherFactory weatherFactory =
     WeatherFactory("22f1e332aeeabd1c9c2a9e015b83bc61");
 
+
 ValueNotifier<WeatherInfo> cityData = ValueNotifier(WeatherInfo(
   dateTime: DateTime.now(),
   sunrise: DateTime.now(),
   sunset: DateTime.now(),
 ));
 
-ValueNotifier<String> cityName = ValueNotifier("Indore");
-ValueNotifier<double> longitude = ValueNotifier(75.8682);
-ValueNotifier<double> latitude = ValueNotifier(22.720362);
+ValueNotifier<String> cityName = ValueNotifier("");
+ValueNotifier<double> longitude = ValueNotifier(double.infinity);
+ValueNotifier<double> latitude = ValueNotifier(double.infinity);
 
 final weatherSVG = <String, String>{
   "000": "lib/assets/satellite.svg",
@@ -38,3 +39,33 @@ final weatherSVG = <String, String>{
   "50d": "lib/assets/mist.svg",
   "50n": "lib/assets/mist.svg",
 };
+
+final weatherColor = <String, String>{
+  "01d": "blue",
+  "01n": "indigo",
+  "02d": "blue",
+  "02n": "indigo",
+  "03d": "bluegrey",
+  "03n": "bluegrey",
+  "04d": "grey",
+  "04n": "grey",
+  "09d": "",
+  "09n": "",
+  "10d": "",
+  "10n": "",
+  "11d": "",
+  "11n": "",
+  "13d": "",
+  "13n": "",
+  "50d": "",
+  "50n": "",
+};
+
+final gradient = [
+  Colors.purple.shade900,
+  Colors.purple.shade700,
+  Colors.purple.shade600,
+  Colors.purple.shade500,
+  Colors.purple.shade300,
+  Colors.purple.shade200,
+];
