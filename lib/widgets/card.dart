@@ -20,7 +20,7 @@ class MyCard extends StatelessWidget {
     return Card(
       shadowColor: Colors.black87,
       elevation: elevation,
-      color: Colors.white,
+      color: Colors.purple.shade100,
       shape: ContinuousRectangleBorder(
         borderRadius: BorderRadius.circular(
           radius,

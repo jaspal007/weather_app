@@ -261,8 +261,36 @@ class _MyBottomSheetState extends State<MyBottomSheet> {
                               return ListTile(
                                 onTap: () {
                                   print("tapped");
-                                  cityName.value = stream[index]["name"];
-                                  Navigator.pop(context);
+                                  try {
+                                    final data = stream[index]["context"];
+                                    if (data["country"]["country_code"]
+                                            .toString()
+                                            .isNotEmpty &&
+                                        data["region"]["region_code"]
+                                            .toString()
+                                            .isNotEmpty) {
+                                      geoCode(
+                                        stream[index]["name"],
+                                        data["region"]["region_code"],
+                                        data["country"]["country_code"],
+                                      ).whenComplete(
+                                          () => Navigator.pop(context));
+                                    }
+                                  } catch (error) {
+                                    showAdaptiveDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          AlertDialog.adaptive(
+                                        content: Text(error.toString()),
+                                        actions: [
+                                          TextButton(
+                                              onPressed: () =>
+                                                  Navigator.pop(context),
+                                              child: const Text("OK")),
+                                        ],
+                                      ),
+                                    );
+                                  }
                                 },
                                 title: Text(
                                   "${stream[index]["name"]}",

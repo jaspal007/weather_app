@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:weather/weather.dart';
 import 'package:weather_app/resources/weather.dart';
 
 String apiKey = "85a179f45f67aedc589a5d756daf7d92";

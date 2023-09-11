@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:intl/intl.dart';
-import 'package:weather/weather.dart';
 import 'package:weather_app/resources/global_variable.dart';
 import 'package:weather_app/resources/location.dart';
 import 'package:weather_app/resources/weather.dart';
@@ -77,7 +76,7 @@ class _MyHomeState extends State<MyHome> {
             info.tempMax = weatherData["main"]["temp_max"] - 273.15;
             info.sunrise = weatherData["sys"]["sunrise"];
             info.sunset = weatherData["sys"]["sunset"];
-            info.windSpeed = weatherData["wind"]["speed"];
+            info.windSpeed = weatherData["wind"]["speed"].toString();
             info.windDirection = weatherData["wind"]["deg"] ?? 0;
             info.windGust = weatherData["wind"]["gust"] ?? 0;
             info.visibility = weatherData["visibility"] ?? 0;
@@ -88,9 +87,9 @@ class _MyHomeState extends State<MyHome> {
           }
         });
       }
-    } on OpenWeatherAPIException catch (error) {
+    } on Exception catch (error) {
       print(error.runtimeType);
-      SnackBar snackBar = const SnackBar(content: Text("data"));
+      SnackBar snackBar = SnackBar(content: Text(error.toString()));
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }
   }
@@ -172,7 +171,6 @@ class _MyHomeState extends State<MyHome> {
 
     return Scaffold(
       appBar: AppBar(
-        // toolbarHeight: height * 0.05,
         centerTitle: true,
         elevation: 0.0,
         actions: [
@@ -182,16 +180,12 @@ class _MyHomeState extends State<MyHome> {
             },
             icon: const Icon(
               Icons.add,
+              color: Colors.white70,
             ),
             splashRadius: 15,
           ),
         ],
         backgroundColor: Colors.purple.shade900,
-      ),
-      drawer: Drawer(
-        width:
-            (orientation == Orientation.portrait) ? width * 0.6 : width * 0.4,
-        backgroundColor: ThemeData.dark().cardColor,
       ),
       body: SafeArea(
         bottom: false,
@@ -222,7 +216,7 @@ class _MyHomeState extends State<MyHome> {
                       duration: const Duration(seconds: 5),
                       // decoration: BoxDecoration(),
                       // color: Colors.grey,
-                      height: height * 0.4,
+                      height: height * 0.43,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -237,7 +231,7 @@ class _MyHomeState extends State<MyHome> {
                                       : "${info.temperature.round()}",
                                   style: TextStyle(
                                     fontSize: height * 0.1,
-                                    // backgroundColor: Colors.green,
+                                    color: Colors.white70,
                                   ),
                                 ),
                                 Column(
@@ -250,7 +244,7 @@ class _MyHomeState extends State<MyHome> {
                                       "℃",
                                       style: TextStyle(
                                         fontSize: height * 0.05,
-                                        // backgroundColor: Colors.yellow,
+                                        color: Colors.white70,
                                       ),
                                     ),
                                   ],
@@ -264,7 +258,10 @@ class _MyHomeState extends State<MyHome> {
                           Text(
                             textAlign: TextAlign.center,
                             info.place.toUpperCase(),
-                            style: TextStyle(fontSize: height * 0.03),
+                            style: TextStyle(
+                              fontSize: height * 0.03,
+                              color: Colors.white70,
+                            ),
                           ),
                           SizedBox(
                             // color: Colors.red,
@@ -274,6 +271,7 @@ class _MyHomeState extends State<MyHome> {
                               (info.weatherIcon == "---")
                                   ? icon
                                   : weatherSVG[info.weatherIcon]!,
+                              color: Colors.white70,
                             ),
                           ),
                           const Padding(
@@ -283,22 +281,29 @@ class _MyHomeState extends State<MyHome> {
                             info.weatherDescription.toUpperCase(),
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: height * 0.35 * 0.06),
+                              fontWeight: FontWeight.bold,
+                              fontSize: height * 0.35 * 0.06,
+                              color: Colors.white70,
+                            ),
                           ),
                           TextButton(
                             onPressed: () {
                               print("tapped");
                               locationService(getLocation());
                             },
-                            child: const Text("Get current weather"),
+                            child: const Text(
+                              "Get current weather",
+                              style: TextStyle(
+                                color: Colors.white70,
+                              ),
+                            ),
                           ),
                         ],
                       ),
                     ),
                     Container(
                       // color: Colors.teal,
-                      height: height * 0.53,
+                      height: height * 0.5,
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       child: SingleChildScrollView(
                         child: Column(
@@ -344,13 +349,31 @@ class _MyHomeState extends State<MyHome> {
                                       mainAxisAlignment:
                                           MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        Text(
-                                          "Sunrise: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunrise * 1000))}",
-                                          //"Sunrise: ${info.sunrise.hour}:${info.sunrise.minute}",
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            const Icon(
+                                              Icons.sunny,
+                                            ),
+                                            Text(
+                                              "Sunrise: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunrise * 1000))}",
+                                              //"Sunrise: ${info.sunrise.hour}:${info.sunrise.minute}",
+                                            ),
+                                          ],
                                         ),
-                                        Text(
-                                          "Sunset: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunset * 1000))}",
-                                          // "Sunset: ${info.sunset.hour}:${info.sunset.minute}",
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            const Icon(
+                                              Icons.sunny_snowing,
+                                            ),
+                                            Text(
+                                              "Sunset: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunset * 1000))}",
+                                              // "Sunset: ${info.sunset.hour}:${info.sunset.minute}",
+                                            ),
+                                          ],
                                         ),
                                       ],
                                     )),
@@ -402,9 +425,9 @@ class _MyHomeState extends State<MyHome> {
                                             MainAxisAlignment.spaceEvenly,
                                         children: [
                                           Text(
-                                            (info.windSpeed == double.infinity)
+                                            (info.windSpeed == 9999)
                                                 ? "Wind Speed: -- kmph"
-                                                : "Wind Speed: ${((info.windSpeed * 18) / 5).round()} kmph",
+                                                : "Wind Speed: ${info.windSpeed} mps",
                                           ),
                                           Text(
                                             (info.windDirection ==
@@ -488,11 +511,29 @@ class _MyHomeState extends State<MyHome> {
                   ],
                 ),
               )
-            : SizedBox(
+            : AnimatedContainer(
+                duration: const Duration(seconds: 3),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.purple.shade900,
+                      Colors.purple.shade800,
+                      Colors.purple.shade700,
+                      Colors.purple.shade600,
+                      Colors.purple.shade500,
+                      Colors.purple.shade300,
+                      Colors.purple.shade200,
+                    ],
+                  ),
+                ),
                 child: Row(
                   children: [
-                    Container(
-                      color: Colors.blue,
+                    AnimatedContainer(
+                      duration: const Duration(seconds: 5),
+                      // decoration: BoxDecoration(),
+                      // color: Colors.grey,
                       height: height,
                       width: width / 3.3,
                       child: Column(
@@ -504,59 +545,88 @@ class _MyHomeState extends State<MyHome> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  temperature,
-                                  style: const TextStyle(
-                                    fontSize: 100,
-                                    // backgroundColor: Colors.green,
+                                  (info.temperature == double.infinity)
+                                      ? "--"
+                                      : "${info.temperature.round()}",
+                                  style: TextStyle(
+                                    fontSize: height * 0.2,
+                                    color: Colors.white70,
                                   ),
                                 ),
-                                const Column(
+                                Column(
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 15),
+                                    const Padding(
+                                      padding: EdgeInsets.only(top: 7.5),
                                     ),
                                     Text(
                                       "℃",
                                       style: TextStyle(
-                                        fontSize: 40,
-                                        // backgroundColor: Colors.yellow,
+                                        fontSize: height * 0.1,
+                                        color: Colors.white70,
                                       ),
                                     ),
                                   ],
-                                ),
+                                )
                               ],
                             ),
                           ),
-                          const Padding(
-                            padding: EdgeInsets.all(20),
+                          Padding(
+                            padding: EdgeInsets.all(height * 0.35 * 0.05),
                           ),
                           Text(
                             textAlign: TextAlign.center,
-                            info.place,
+                            info.place.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: height * 0.06,
+                              color: Colors.white70,
+                            ),
                           ),
                           SizedBox(
-                            height: height * 0.3,
+                            // color: Colors.red,
+                            height: height * 0.2,
                             width: double.infinity,
                             child: SvgPicture.asset(
-                              icon,
-                              fit: BoxFit.contain,
-                              color: Colors.white,
+                              (info.weatherIcon == "---")
+                                  ? icon
+                                  : weatherSVG[info.weatherIcon]!,
+                              color: Colors.white70,
                             ),
                           ),
                           const Padding(
-                            padding: EdgeInsets.all(10),
+                            padding: EdgeInsets.all(5),
                           ),
                           Text(
-                            info.weatherDescription,
+                            info.weatherDescription.toUpperCase(),
                             textAlign: TextAlign.center,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          )
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: height * 0.7 * 0.06,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          ElevatedButton(
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStatePropertyAll(
+                                Colors.purple.shade700,
+                              ),
+                              foregroundColor: const MaterialStatePropertyAll(
+                                Colors.white70,
+                              ),
+                            ),
+                            onPressed: () {
+                              print("tapped");
+                              locationService(getLocation());
+                            },
+                            child: const Text(
+                              "Get current weather",
+                            ),
+                          ),
                         ],
                       ),
                     ),
                     Container(
-                      color: Colors.teal,
+                      // color: Colors.teal,
                       height: height,
                       width: (2.3 * width / 3.25),
                       padding: const EdgeInsets.symmetric(horizontal: 5),
@@ -569,67 +639,191 @@ class _MyHomeState extends State<MyHome> {
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
                                   children: [
-                                    Card(
-                                      child: SizedBox(
-                                        height: 100,
-                                        width: (2 * width / 3) / 3,
-                                        child:
-                                            const Center(child: Text("card1")),
+                                    MyCard(
+                                      width: (2 * width / 3) / 3,
+                                      height: 100,
+                                      radius: 20,
+                                      widget: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Text(
+                                              (info.tempMin == double.infinity)
+                                                  ? "--℃"
+                                                  : "Min: ${info.tempMin.round()}℃",
+                                            ),
+                                            Text(
+                                              (info.tempMax == double.infinity)
+                                                  ? "--℃"
+                                                  : "Max: ${info.tempMax.round()}℃",
+                                            ),
+                                            Text(
+                                              (info.tempFeels ==
+                                                      double.infinity)
+                                                  ? "--℃"
+                                                  : "Feels like: ${info.tempFeels.round()}℃",
+                                            )
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    Card(
-                                      child: SizedBox(
-                                        height: 100,
-                                        width: (2 * width / 3) / 3,
-                                        child:
-                                            const Center(child: Text("card2")),
+                                    MyCard(
+                                      width: (2 * width / 3) / 3,
+                                      height: 100,
+                                      radius: 20,
+                                      widget: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                const Icon(
+                                                  Icons.sunny,
+                                                ),
+                                                Text(
+                                                  "Sunrise: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunrise * 1000))}",
+                                                  //"Sunrise: ${info.sunrise.hour}:${info.sunrise.minute}",
+                                                ),
+                                              ],
+                                            ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                const Icon(
+                                                  Icons.sunny_snowing,
+                                                ),
+                                                Text(
+                                                  "Sunset: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunset * 1000))}",
+                                                  // "Sunset: ${info.sunset.hour}:${info.sunset.minute}",
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
-                                    Card(
-                                      child: SizedBox(
-                                        height: 100,
-                                        width: (2 * width / 3) / 3,
-                                        child:
-                                            const Center(child: Text("card3")),
+                                    MyCard(
+                                      width: (2 * width / 3) / 3,
+                                      height: 100,
+                                      radius: 20,
+                                      widget: Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Text(
+                                              (info.windSpeed == 9999)
+                                                  ? "Wind Speed: -- kmph"
+                                                  : "Wind Speed: ${info.windSpeed} mps",
+                                            ),
+                                            Text(
+                                              (info.windDirection ==
+                                                      double.infinity)
+                                                  ? "Direction: --°"
+                                                  : "Direction: ${info.windDirection}°",
+                                            ),
+                                            Text(
+                                              ((info.windGust ==
+                                                      double.infinity)
+                                                  ? "Gust: -- kmph"
+                                                  : "Gust: ${((info.windGust * 18) / 5).round()} kmph"),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              const Card(
-                                child: SizedBox(
-                                  height: 400,
-                                  width: double.infinity,
-                                  child: Center(child: Text("card4")),
+                              MyCard(
+                                width: (2.3 * width / 3.25),
+                                height: 400,
+                                radius: 20,
+                                widget: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 10.0,
+                                    horizontal: 5.0,
+                                  ),
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        ...weatherForecast.map(
+                                          (value) => MyForecastCard(
+                                            width: (2.3 * width / 3.25) / 4,
+                                            height: 405,
+                                            radius: 20,
+                                            elevation: 5,
+                                            weatherInfo: value,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ),
                               SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: Row(
                                   children: [
-                                    Card(
-                                      child: SizedBox(
-                                        height: 100,
-                                        width: (2 * width / 3) / 3,
-                                        child:
-                                            const Center(child: Text("card5")),
+                                    MyCard(
+                                      width: (2 * width / 3) / 3,
+                                      height: 100,
+                                      radius: 20,
+                                      widget: Center(
+                                        child: Text(
+                                          "Visibility: ${info.visibility / 1000} km",
+                                        ),
                                       ),
                                     ),
-                                    Card(
-                                      child: SizedBox(
-                                        height: 100,
-                                        width: (2 * width / 3) / 3,
-                                        child:
-                                            const Center(child: Text("card6")),
-                                      ),
+                                    MyCard(
+                                      width: (2 * width / 3) / 3,
+                                      height: 100,
+                                      radius: 20,
+                                      widget: Center(
+                                          child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Text(
+                                            "Pressure: ${info.pressure} pa",
+                                          ),
+                                          Text(
+                                            "Humidity: ${info.humidity} RH",
+                                          ),
+                                        ],
+                                      )),
                                     ),
-                                    Card(
-                                      child: SizedBox(
-                                        height: 100,
-                                        width: (2 * width / 3) / 3,
-                                        child:
-                                            const Center(child: Text("card7")),
-                                      ),
+                                    MyCard(
+                                      width: (2 * width / 3) / 3,
+                                      height: 100,
+                                      radius: 20,
+                                      widget: Center(
+                                          child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Text(
+                                            (info.groundLevel == 9999)
+                                                ? "Ground Level: -- m"
+                                                : "Ground Level: ${info.groundLevel} m",
+                                          ),
+                                          Text(
+                                            (info.seaLevel == 9999)
+                                                ? "Sea Level: -- m"
+                                                : "Sea Level: ${info.seaLevel} m",
+                                          ),
+                                        ],
+                                      )),
                                     ),
                                   ],
                                 ),

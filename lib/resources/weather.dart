@@ -13,7 +13,7 @@ class WeatherInfo {
   int pressure;
   int sunrise;
   int sunset;
-  double windSpeed;
+  String windSpeed;
   int windDirection;
   double windGust;
   String weatherIcon;
@@ -37,7 +37,7 @@ class WeatherInfo {
     this.sunset = 9999,
     this.pressure = 9999,
     this.windDirection = 9999,
-    this.windSpeed = double.infinity,
+    this.windSpeed = "---",
     this.windGust = double.infinity,
     this.visibility = 9999,
     this.groundLevel = 9999,

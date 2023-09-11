@@ -29,7 +29,7 @@ class _MyForecastCardState extends State<MyForecastCard> {
     return Card(
       shadowColor: Colors.black87,
       elevation: widget.elevation,
-      color: Colors.white,
+      color: Colors.purple.shade100,
       shape: ContinuousRectangleBorder(
         borderRadius: BorderRadius.circular(
           widget.radius,
