@@ -6,33 +6,41 @@ class WeatherInfo {
   double tempMin;
   double tempMax;
   double tempFeels;
-  DateTime dateTime = DateTime.now();
-  String weather;
+  int dateTime;
+  String weatherDescription;
   String precipitation;
-  double humidity;
-  double pressure;
-  DateTime sunrise;
-  DateTime sunset;
+  int humidity;
+  int pressure;
+  int sunrise;
+  int sunset;
   double windSpeed;
-  double windDirection;
+  int windDirection;
+  double windGust;
   String weatherIcon;
+  int visibility;
+  int seaLevel;
+  int groundLevel;
   WeatherInfo({
-    required this.dateTime,
+    this.dateTime = 9999,
     this.temperature = double.infinity,
     this.tempMin = double.infinity,
     this.tempMax = double.infinity,
     this.tempFeels = double.infinity,
-    this.weather = "---",
+    this.weatherDescription = "---",
     this.weatherIcon = "---",
     this.place = "---",
-    this.humidity = double.infinity,
+    this.humidity = 9999,
     this.latitude = double.infinity,
     this.longitude = double.infinity,
     this.precipitation = "---",
-    required this.sunrise,
-    required this.sunset,
-    this.pressure = double.infinity,
-    this.windDirection = double.infinity,
+    this.sunrise = 9999,
+    this.sunset = 9999,
+    this.pressure = 9999,
+    this.windDirection = 9999,
     this.windSpeed = double.infinity,
+    this.windGust = double.infinity,
+    this.visibility = 9999,
+    this.groundLevel = 9999,
+    this.seaLevel = 9999,
   });
 }

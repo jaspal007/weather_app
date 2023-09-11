@@ -1,11 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:location/location.dart';
+import 'package:intl/intl.dart';
 import 'package:weather/weather.dart';
 import 'package:weather_app/resources/global_variable.dart';
+import 'package:weather_app/resources/location.dart';
 import 'package:weather_app/resources/weather.dart';
 import 'package:weather_app/screens/bottom_screen.dart';
 import 'package:weather_app/widgets/card.dart';
+import 'package:http/http.dart' as http;
+import 'package:weather_app/widgets/forecast_card.dart';
 
 class MyHome extends StatefulWidget {
   const MyHome({super.key});
@@ -15,71 +19,75 @@ class MyHome extends StatefulWidget {
 }
 
 class _MyHomeState extends State<MyHome> {
-  Location location = Location();
-  late LocationData _locationData;
-
   String temperature = "--";
   String tempMin = "--";
   String tempMax = "--";
   String icon = weatherSVG["000"]!;
-  WeatherInfo info = WeatherInfo(
-    dateTime: DateTime.now(),
-    sunrise: DateTime.now(),
-    sunset: DateTime.now(),
-  );
-
-  Future<void> locationService() async {
-    bool _serviceGranted;
-    PermissionStatus _permissionStatus;
-    _serviceGranted = await location.serviceEnabled();
-    if (!_serviceGranted) {
-      _serviceGranted = await location.requestService();
-      if (!_serviceGranted) {
-        print("service is not granted");
-      }
-    }
-    _permissionStatus = await location.hasPermission();
-    if (_permissionStatus == PermissionStatus.denied) {
-      _permissionStatus = await location.requestPermission();
-      if (_permissionStatus == PermissionStatus.denied) {
-        print("permission is not granted");
-      }
-      print("permission granted");
-    }
-    getLocation();
-  }
+  WeatherInfo info = WeatherInfo();
 
   Future<void> getLocation() async {
     try {
-      _locationData = await location.getLocation();
+      locationData = await location.getLocation();
       setState(() {
-        longitude.value = _locationData.longitude!;
-        latitude.value = _locationData.latitude!;
+        longitude.value = locationData.longitude!;
+        latitude.value = locationData.latitude!;
       });
+      print("long: ${longitude.value}\n lat: ${latitude.value}");
     } on Exception catch (error) {
       print(error.toString());
     }
+    getForecast();
     callWeather();
   }
 
-  Future<void> callWeather() async {
+  Future<void> getCity() async {
+    var url = Uri.parse(
+        "http://api.openweathermap.org/geo/1.0/reverse?lat=${latitude.value}&lon=${longitude.value}&limit=5&appid=$apiKey");
+    http.Response response = await http.get(url);
     try {
-      Weather weatherInfo = await weatherFactory.currentWeatherByLocation(
-          latitude.value, longitude.value);
-      //await weatherFactory.currentWeatherByCityName(cityName.value);
-      print(weatherInfo);
-      setState(() {
-        info.dateTime = weatherInfo.date!;
-        info.temperature = weatherInfo.temperature!.celsius!;
-        info.weather = weatherInfo.weatherDescription!;
-        info.place = "${weatherInfo.areaName!}, ${weatherInfo.country!}";
-        info.weatherIcon = weatherInfo.weatherIcon!;
-        info.tempMin = weatherInfo.tempMin!.celsius!;
-        info.tempMax = weatherInfo.tempMax!.celsius!;
-        temperature = info.temperature.round().toString();
-        icon = weatherSVG[info.weatherIcon]!;
-      });
-      print("weather icon: ${info.weatherIcon}");
+      if (response.statusCode == 200) {
+        String data = response.body;
+        List city = jsonDecode(data);
+        setState(() {
+          info.place = "${city.first["name"]}, ${city.first["country"]}";
+        });
+      }
+    } on Exception catch (error) {
+      print(error);
+    }
+  }
+
+  Future<void> callWeather() async {
+    getCity();
+    var url = Uri.parse(
+        "https://api.openweathermap.org/data/2.5/weather?lat=${latitude.value}&lon=${longitude.value}&appid=$apiKey");
+    http.Response response = await http.get(url);
+    try {
+      if (response.statusCode == 200) {
+        String data = response.body;
+        Map weatherData = jsonDecode(data);
+        print(weatherData["main"]);
+        setState(() {
+          if (weatherData.isNotEmpty) {
+            info.temperature = weatherData["main"]["temp"] - 273.15;
+            info.weatherDescription = weatherData["weather"][0]["description"];
+            info.weatherIcon = weatherData["weather"][0]["icon"];
+            info.tempMin = weatherData["main"]["temp_min"] - 273.15;
+            info.tempFeels = weatherData["main"]["feels_like"] - 273.15;
+            info.tempMax = weatherData["main"]["temp_max"] - 273.15;
+            info.sunrise = weatherData["sys"]["sunrise"];
+            info.sunset = weatherData["sys"]["sunset"];
+            info.windSpeed = weatherData["wind"]["speed"];
+            info.windDirection = weatherData["wind"]["deg"] ?? 0;
+            info.windGust = weatherData["wind"]["gust"] ?? 0;
+            info.visibility = weatherData["visibility"] ?? 0;
+            info.pressure = weatherData["main"]["pressure"] ?? 0;
+            info.humidity = weatherData["main"]["humidity"] ?? 0;
+            info.seaLevel = weatherData["main"]["sea_level"] ?? 9999;
+            info.groundLevel = weatherData["main"]["grnd_level"] ?? 9999;
+          }
+        });
+      }
     } on OpenWeatherAPIException catch (error) {
       print(error.runtimeType);
       SnackBar snackBar = const SnackBar(content: Text("data"));
@@ -87,13 +95,64 @@ class _MyHomeState extends State<MyHome> {
     }
   }
 
+  Future<void> getForecast() async {
+    var url = Uri.parse(
+        "https://api.openweathermap.org/data/2.5/forecast?lat=${latitude.value}&lon=${longitude.value}&appid=$apiKey");
+    http.Response response = await http.get(url);
+    try {
+      if (response.statusCode == 200) {
+        String data = response.body;
+        Map forecast = jsonDecode(data);
+        List weather = forecast["list"];
+        for (int i = 0; i < 5; i++) {
+          var data = weather[i];
+          setState(() {
+            weatherForecast[i] = WeatherInfo(
+              tempMin: data["main"]["temp_min"] - 273.15,
+              tempMax: data["main"]["temp_max"] - 273.15,
+              humidity: data["main"]["humidity"] ?? 9999,
+              weatherDescription: data["weather"][0]["description"],
+              weatherIcon: data["weather"][0]["icon"],
+            );
+          });
+        }
+      }
+      print("forecast");
+    } on Exception catch (error) {
+      print(error);
+    }
+  }
+
+  bool showDragHandle(value) {
+    bool flag = true;
+    setState(() {
+      if (value == Orientation.landscape) flag = false;
+    });
+    return flag;
+  }
+
+  Future getmodalBottomSheet(orientation) {
+    return showModalBottomSheet(
+        isScrollControlled: true,
+        showDragHandle: showDragHandle(orientation),
+        isDismissible: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        context: context,
+        builder: (context) => const MyBottomSheet());
+  }
+
   @override
   void initState() {
     super.initState();
-    locationService();
-    // callWeather();
+    locationService(getLocation());
     latitude.addListener(() {
       callWeather();
+      getForecast();
     });
   }
 
@@ -104,14 +163,6 @@ class _MyHomeState extends State<MyHome> {
 
   @override
   Widget build(BuildContext context) {
-    bool showDragHandle(value) {
-      bool flag = true;
-      setState(() {
-        if (value == Orientation.landscape) flag = false;
-      });
-      return flag;
-    }
-
     final orientation = MediaQuery.of(context).orientation;
     double height = MediaQuery.of(context).size.height -
         MediaQuery.of(context).viewPadding.top;
@@ -120,6 +171,23 @@ class _MyHomeState extends State<MyHome> {
     print("width: ${MediaQuery.of(context).size.width}"); //393
 
     return Scaffold(
+      appBar: AppBar(
+        // toolbarHeight: height * 0.05,
+        centerTitle: true,
+        elevation: 0.0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              getmodalBottomSheet(orientation);
+            },
+            icon: const Icon(
+              Icons.add,
+            ),
+            splashRadius: 15,
+          ),
+        ],
+        backgroundColor: Colors.purple.shade900,
+      ),
       drawer: Drawer(
         width:
             (orientation == Orientation.portrait) ? width * 0.6 : width * 0.4,
@@ -138,6 +206,7 @@ class _MyHomeState extends State<MyHome> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.purple.shade900,
+                      Colors.purple.shade800,
                       Colors.purple.shade700,
                       Colors.purple.shade600,
                       Colors.purple.shade500,
@@ -163,7 +232,9 @@ class _MyHomeState extends State<MyHome> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  temperature,
+                                  (info.temperature == double.infinity)
+                                      ? "--"
+                                      : "${info.temperature.round()}",
                                   style: TextStyle(
                                     fontSize: height * 0.1,
                                     // backgroundColor: Colors.green,
@@ -200,23 +271,25 @@ class _MyHomeState extends State<MyHome> {
                             height: height * 0.1,
                             width: double.infinity,
                             child: SvgPicture.asset(
-                              icon,
+                              (info.weatherIcon == "---")
+                                  ? icon
+                                  : weatherSVG[info.weatherIcon]!,
                             ),
                           ),
                           const Padding(
                             padding: EdgeInsets.all(5),
                           ),
                           Text(
-                            info.weather.toUpperCase(),
+                            info.weatherDescription.toUpperCase(),
                             textAlign: TextAlign.center,
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: height * 0.35 * 0.06),
                           ),
                           TextButton(
-                            onPressed: (){
+                            onPressed: () {
                               print("tapped");
-                              locationService();
+                              locationService(getLocation());
                             },
                             child: const Text("Get current weather"),
                           ),
@@ -225,7 +298,7 @@ class _MyHomeState extends State<MyHome> {
                     ),
                     Container(
                       // color: Colors.teal,
-                      height: height * 0.6,
+                      height: height * 0.53,
                       padding: const EdgeInsets.symmetric(horizontal: 5),
                       child: SingleChildScrollView(
                         child: Column(
@@ -238,9 +311,27 @@ class _MyHomeState extends State<MyHome> {
                                     width: width / 2,
                                     height: 100,
                                     radius: 20,
-                                    widget: const Center(
-                                      child: Text(
-                                        "card1",
+                                    widget: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Text(
+                                            (info.tempMin == double.infinity)
+                                                ? "--℃"
+                                                : "Min: ${info.tempMin.round()}℃",
+                                          ),
+                                          Text(
+                                            (info.tempMax == double.infinity)
+                                                ? "--℃"
+                                                : "Max: ${info.tempMax.round()}℃",
+                                          ),
+                                          Text(
+                                            (info.tempFeels == double.infinity)
+                                                ? "--℃"
+                                                : "Feels like: ${info.tempFeels.round()}℃",
+                                          )
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -248,11 +339,21 @@ class _MyHomeState extends State<MyHome> {
                                     width: width / 2,
                                     height: 100,
                                     radius: 20,
-                                    widget: const Center(
-                                      child: Text(
-                                        "card2",
-                                      ),
-                                    ),
+                                    widget: Center(
+                                        child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Text(
+                                          "Sunrise: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunrise * 1000))}",
+                                          //"Sunrise: ${info.sunrise.hour}:${info.sunrise.minute}",
+                                        ),
+                                        Text(
+                                          "Sunset: ${DateFormat('HH:mm a').format(DateTime.fromMillisecondsSinceEpoch(info.sunset * 1000))}",
+                                          // "Sunset: ${info.sunset.hour}:${info.sunset.minute}",
+                                        ),
+                                      ],
+                                    )),
                                   ),
                                 ],
                               ),
@@ -261,9 +362,29 @@ class _MyHomeState extends State<MyHome> {
                               width: width,
                               height: 400,
                               radius: 20,
-                              widget: const Center(
-                                child: Text(
-                                  "card4",
+                              widget: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10.0,
+                                  horizontal: 5.0,
+                                ),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      ...weatherForecast.map(
+                                        (value) => MyForecastCard(
+                                          width: width / 3,
+                                          height: 405,
+                                          radius: 10,
+                                          elevation: 5,
+                                          weatherInfo: value,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
@@ -275,9 +396,28 @@ class _MyHomeState extends State<MyHome> {
                                     width: width / 2,
                                     height: 100,
                                     radius: 20,
-                                    widget: const Center(
-                                      child: Text(
-                                        "card5",
+                                    widget: Center(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          Text(
+                                            (info.windSpeed == double.infinity)
+                                                ? "Wind Speed: -- kmph"
+                                                : "Wind Speed: ${((info.windSpeed * 18) / 5).round()} kmph",
+                                          ),
+                                          Text(
+                                            (info.windDirection ==
+                                                    double.infinity)
+                                                ? "Direction: --°"
+                                                : "Direction: ${info.windDirection}°",
+                                          ),
+                                          Text(
+                                            ((info.windGust == double.infinity)
+                                                ? "Gust: -- kmph"
+                                                : "Gust: ${((info.windGust * 18) / 5).round()} kmph"),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -285,9 +425,9 @@ class _MyHomeState extends State<MyHome> {
                                     width: width / 2,
                                     height: 100,
                                     radius: 20,
-                                    widget: const Center(
+                                    widget: Center(
                                       child: Text(
-                                        "card6",
+                                        "Visibility: ${info.visibility / 1000} km",
                                       ),
                                     ),
                                   ),
@@ -302,21 +442,41 @@ class _MyHomeState extends State<MyHome> {
                                     width: width / 2,
                                     height: 100,
                                     radius: 20,
-                                    widget: const Center(
-                                      child: Text(
-                                        "card3",
-                                      ),
-                                    ),
+                                    widget: Center(
+                                        child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Text(
+                                          "Pressure: ${info.pressure} pa",
+                                        ),
+                                        Text(
+                                          "Humidity: ${info.humidity} RH",
+                                        ),
+                                      ],
+                                    )),
                                   ),
                                   MyCard(
                                     width: width / 2,
                                     height: 100,
                                     radius: 20,
-                                    widget: const Center(
-                                      child: Text(
-                                        "card7",
-                                      ),
-                                    ),
+                                    widget: Center(
+                                        child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        Text(
+                                          (info.groundLevel == 9999)
+                                              ? "Ground Level: -- m"
+                                              : "Ground Level: ${info.groundLevel} m",
+                                        ),
+                                        Text(
+                                          (info.seaLevel == 9999)
+                                              ? "Sea Level: -- m"
+                                              : "Sea Level: ${info.seaLevel} m",
+                                        ),
+                                      ],
+                                    )),
                                   ),
                                 ],
                               ),
@@ -388,7 +548,7 @@ class _MyHomeState extends State<MyHome> {
                             padding: EdgeInsets.all(10),
                           ),
                           Text(
-                            info.weather,
+                            info.weatherDescription,
                             textAlign: TextAlign.center,
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           )
@@ -483,53 +643,6 @@ class _MyHomeState extends State<MyHome> {
                 ),
               ),
       ),
-      floatingActionButtonAnimator: FloatingActionButtonAnimator.scaling,
-      floatingActionButtonLocation: (orientation == Orientation.landscape)
-          ? FloatingActionButtonLocation.miniEndDocked
-          : FloatingActionButtonLocation.endFloat,
-      floatingActionButton: (orientation == Orientation.portrait)
-          ? FloatingActionButton.extended(
-              backgroundColor: ThemeData.dark().primaryColor,
-              onPressed: () {
-                showModalBottomSheet(
-                    isScrollControlled: true,
-                    showDragHandle: true,
-                    isDismissible: true,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    context: context,
-                    builder: (context) => const MyBottomSheet());
-              },
-              label: const Text(
-                "Add City",
-                style: TextStyle(
-                  color: Colors.white,
-                ),
-              ),
-              icon: const Icon(Icons.add),
-            )
-          : FloatingActionButton(
-              backgroundColor: ThemeData.dark().primaryColor,
-              onPressed: () {
-                showModalBottomSheet(
-                    isScrollControlled: true,
-                    showDragHandle: showDragHandle(orientation),
-                    isDismissible: true,
-                    shape: const RoundedRectangleBorder(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20),
-                        topRight: Radius.circular(20),
-                      ),
-                    ),
-                    context: context,
-                    builder: (context) => const MyBottomSheet());
-              },
-              child: const Icon(Icons.add),
-            ),
     );
   }
 }

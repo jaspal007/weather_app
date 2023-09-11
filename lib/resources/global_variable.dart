@@ -4,16 +4,6 @@ import 'package:weather_app/resources/weather.dart';
 
 String apiKey = "85a179f45f67aedc589a5d756daf7d92";
 
-WeatherFactory weatherFactory =
-    WeatherFactory("22f1e332aeeabd1c9c2a9e015b83bc61");
-
-
-ValueNotifier<WeatherInfo> cityData = ValueNotifier(WeatherInfo(
-  dateTime: DateTime.now(),
-  sunrise: DateTime.now(),
-  sunset: DateTime.now(),
-));
-
 ValueNotifier<String> cityName = ValueNotifier("");
 ValueNotifier<double> longitude = ValueNotifier(double.infinity);
 ValueNotifier<double> latitude = ValueNotifier(double.infinity);
@@ -69,3 +59,9 @@ final gradient = [
   Colors.purple.shade300,
   Colors.purple.shade200,
 ];
+
+List<String> forecast = ["a", "b", "c", "d", "e", "f", "g", "h"];
+List<WeatherInfo> weatherForecast = List<WeatherInfo>.generate(
+  5,
+  (index) => WeatherInfo(),
+);
